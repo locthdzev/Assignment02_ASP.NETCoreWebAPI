@@ -1,0 +1,284 @@
+@using BusinessObject.DTOs;
+@model IEnumerable<AuthorDTO>
+
+<div class="container-fluid mt-5">
+    <h2 class="text-center mb-4">Author Management</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add/Edit Author</h4>
+                </div>
+                <div class="card-body">
+                    <input type="text" id="lastName" class="form-control mb-3" placeholder="Last Name" />
+                    <input type="text" id="firstName" class="form-control mb-3" placeholder="First Name" />
+                    <input type="text" id="phone" class="form-control mb-3" placeholder="Phone" />
+                    <input type="text" id="address" class="form-control mb-3" placeholder="Address" />
+                    <input type="text" id="city" class="form-control mb-3" placeholder="City" />
+                    <input type="text" id="state" class="form-control mb-3" placeholder="State" />
+                    <input type="text" id="zip" class="form-control mb-3" placeholder="Zip" />
+                    <input type="email" id="emailAddress" class="form-control mb-3" placeholder="Email Address" />
+                    <button id="addAuthor" class="btn btn-primary btn-lg w-100">Add</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Author List</h4>
+                </div>
+                <div class="card-body">
+                    <input type="text" id="searchAuthor" class="form-control mb-3" placeholder="Search Author" />
+                    <ul id="authorList" class="list-group list-group-flush"></ul>
+                </div>
+                <div class="card-footer">
+                    <nav aria-label="Page navigation">
+                        <ul id="pagination" class="pagination justify-content-center"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="alertMessage"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let currentPage = 1;
+    const authorsPerPage = 5;
+    let allAuthors = [];
+
+    $(document).ready(function () {
+        loadAuthors();
+
+        $('#addAuthor').click(function () {
+            // if (!validateInputs()) return;
+            const author = {
+                last_name: $('#lastName').val(),
+                first_name: $('#firstName').val(),
+                phone: $('#phone').val(),
+                address: $('#address').val(),
+                city: $('#city').val(),
+                state: $('#state').val(),
+                zip: $('#zip').val(),
+                email_address: $('#emailAddress').val()
+            };
+
+            $.ajax({
+                url: 'http://localhost:5259/odata/author',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(author),
+                success: function () {
+                    loadAuthors();
+                    clearInputs();
+                    showAlert('Author added successfully', 'success');
+                },
+                error: function (error) {
+                    showAlert('Error: ' + error.responseText, 'danger');
+                }
+            });
+        });
+
+        $('#searchAuthor').on('input', function () {
+            const searchTerm = $(this).val().toLowerCase();
+            const filteredAuthors = allAuthors.filter(author =>
+                (author.first_name + ' ' + author.last_name).toLowerCase().includes(searchTerm)
+            );
+            displayAuthors(filteredAuthors);
+            createPagination(Math.ceil(filteredAuthors.length / authorsPerPage));
+        });
+    });
+
+    function loadAuthors() {
+        $.ajax({
+            url: 'http://localhost:5259/odata/author',
+            type: 'GET',
+            success: function (data) {
+                allAuthors = data;
+                displayAuthors(allAuthors);
+                createPagination(Math.ceil(allAuthors.length / authorsPerPage));
+            },
+            error: function (error) {
+                showAlert('Error: ' + error.responseText, 'danger');
+            }
+        });
+    }
+
+    function displayAuthors(authors) {
+        const paginatedAuthors = authors.slice((currentPage - 1) * authorsPerPage, currentPage * authorsPerPage);
+
+        $('#authorList').empty();
+        $.each(paginatedAuthors, function (i, author) {
+            $('#authorList').append(`
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">ID: ${author.author_id}</h5>
+                            <h5 class="mb-1">Name: ${author.first_name} ${author.last_name}</h5>
+                            <p class="mb-1">Phone: ${author.phone}</p>
+                            <p class="mb-1">Email: ${author.email_address}</p>
+                            <p class="mb-1">Address: ${author.address}, ${author.city}, ${author.state} - ${author.zip}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-warning btn-sm me-1" onclick="getAuthor(${author.author_id})">Edit</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteAuthor(${author.author_id})">Delete</button>
+                        </div>
+                    </div>
+                </li>
+            `);
+        });
+
+        if (authors.length === 0) {
+            $('#authorList').append(`<li class="list-group-item text-center">No authors found</li>`);
+        }
+    }
+
+    function createPagination(totalPages) {
+        $('#pagination').empty();
+        const pageLinks = [];
+
+        if (currentPage > 1) {
+            pageLinks.push(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})">«</a></li>`);
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+            pageLinks.push(`<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`);
+        }
+
+        if (currentPage < totalPages) {
+            pageLinks.push(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">»</a></li>`);
+        }
+
+        $('#pagination').append(pageLinks.join(''));
+    }
+
+    function changePage(page) {
+        currentPage = page;
+        const searchTerm = $('#searchAuthor').val().toLowerCase();
+        const filteredAuthors = allAuthors.filter(author =>
+            (author.first_name + ' ' + author.last_name).toLowerCase().includes(searchTerm)
+        );
+        displayAuthors(filteredAuthors);
+    }
+
+    function getAuthor(id) {
+        $.ajax({
+            url: 'http://localhost:5259/odata/author/' + id,
+            type: 'GET',
+            success: function (author) {
+                $('#lastName').val(author.last_name);
+                $('#firstName').val(author.first_name);
+                $('#phone').val(author.phone);
+                $('#address').val(author.address);
+                $('#city').val(author.city);
+                $('#state').val(author.state);
+                $('#zip').val(author.zip);
+                $('#emailAddress').val(author.email_address);
+                $('#addAuthor').text('Update').removeClass('btn-primary').addClass('btn-success').off('click').on('click', function () {
+                    updateAuthor(id);
+                });
+            },
+            error: function (error) {
+                showAlert('Error: ' + error.responseText, 'danger');
+            }
+        });
+    }
+
+    function updateAuthor(id) {
+        // if (!validateInputs()) return;
+        const author = {
+            last_name: $('#lastName').val(),
+            first_name: $('#firstName').val(),
+            phone: $('#phone').val(),
+            address: $('#address').val(),
+            city: $('#city').val(),
+            state: $('#state').val(),
+            zip: $('#zip').val(),
+            email_address: $('#emailAddress').val()
+        };
+
+        $.ajax({
+            url: 'http://localhost:5259/odata/author/' + id,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(author),
+            success: function () {
+                loadAuthors();
+                clearInputs();
+                $('#addAuthor').text('Add').removeClass('btn-success').addClass('btn-primary').off('click').on('click', function () {
+                    addAuthor();
+                });
+                showAlert('Author updated successfully', 'success');
+            },
+            error: function (error) {
+                showAlert('Error: ' + error.responseText, 'danger');
+            }
+        });
+    }
+
+    function deleteAuthor(id) {
+        if (confirm('Are you sure you want to delete this author?')) {
+            $.ajax({
+                url: 'http://localhost:5259/odata/author/' + id,
+                type: 'DELETE',
+                success: function () {
+                    loadAuthors();
+                    showAlert('Author deleted successfully', 'success');
+                },
+                error: function (error) {
+                    showAlert('Error: ' + error.responseText, 'danger');
+                }
+            });
+        }
+    }
+
+    function clearInputs() {
+        $('#lastName').val('');
+        $('#firstName').val('');
+        $('#phone').val('');
+        $('#address').val('');
+        $('#city').val('');
+        $('#state').val('');
+        $('#zip').val('');
+        $('#emailAddress').val('');
+    }
+
+    function showAlert(message) {
+        $('#alertMessage').text(message);
+        const modal = new bootstrap.Modal(document.getElementById('alertModal'));
+        modal.show();
+    }
+
+    // function validateInputs() {
+    //     let valid = true;
+    //     const inputs = [$('#lastName'), $('#firstName'), $('#phone'), $('#address'), $('#city'), $('#state'), $('#zip'), $('#emailAddress')];
+    //     inputs.forEach(input => {
+    //         if (!input.val()) {
+    //             input.addClass('is-invalid');
+    //             valid = false;
+    //         } else {
+    //             input.removeClass('is-invalid');
+    //         }
+    //     });
+    //     return valid;
+    // }
+</script>

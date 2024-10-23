@@ -1,0 +1,109 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<style>
+    .hero {
+        background-color: #6c757d; /* Màu nền giống như trong ảnh */
+        color: white;
+        text-align: center;
+        padding: 50px 0;
+    }
+
+    .features {
+        display: flex;
+        justify-content: space-around; /* Căn giữa các phần */
+        margin: 20px 0;
+    }
+
+    .feature-item {
+        background-color: white; /* Màu nền cho từng phần */
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        text-align: center;
+        width: 30%; /* Chiều rộng của mỗi phần */
+        transition: transform 0.3s ease, box-shadow 0.3s ease; /* Thêm hiệu ứng chuyển động */
+    }
+
+    .feature-item h5 {
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    .feature-item:hover {
+        transform: translateY(-10px); /* Dịch chuyển lên khi hover */
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Tăng độ mờ của bóng khi hover */
+        transition: all 0.3s ease; /* Hiệu ứng chuyển động khi hover */
+    }
+
+    /* Style cho nút login và register */
+    .auth-buttons {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .btn-login,
+    .btn-register {
+        border: none;
+        color: #ffffff;
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        margin: 10px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .btn-login {
+        background-color: #80c791;
+    }
+
+    .btn-login:hover {
+        background-color: #8aa790;
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-register {
+        background-color: #17a2b8;
+    }
+
+    .btn-register:hover {
+        background-color: #138496;
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<div class="hero">
+    <h1>Welcome to CustomerClient</h1>
+    <p>Your one-stop solution for managing customer data efficiently.</p>
+
+    <!-- Nút đăng nhập và đăng ký -->
+    <div class="auth-buttons">
+        @if (Context.Session.GetString("email_address") == null)
+        {
+            <a asp-controller="Auth" asp-action="Login" class="btn btn-login"><i class="fas fa-sign-in-alt mr-1"></i>Login</a>
+            <a asp-controller="Auth" asp-action="Register" class="btn btn-register"><i class="fas fa-user-plus mr-1"></i>Register</a>
+        }
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-item">
+        <i class="fas fa-user-friends fa-2x"></i>
+        <h5>Manage Customers</h5>
+        <p>Easily add, edit, or remove customers in your database.</p>
+    </div>
+    <div class="feature-item">
+        <i class="fas fa-shield-alt fa-2x"></i>
+        <h5>Secure Data</h5>
+        <p>Your customer data is secure with top-notch encryption.</p>
+    </div>
+    <div class="feature-item">
+        <i class="fas fa-cogs fa-2x"></i>
+        <h5>Flexible Management</h5>
+        <p>Customizable options to fit your specific needs.</p>
+    </div>
+</div>

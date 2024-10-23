@@ -1,0 +1,67 @@
+@model eBookStore.Models.User
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg mt-5 form-card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Register</h2>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success text-center">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger text-center">
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="form-group mb-3">
+                            <label asp-for="email_address" class="form-label">Email</label>
+                            <input asp-for="email_address" class="form-control" placeholder="Enter your email" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="password" class="form-label">Password</label>
+                            <input asp-for="password" type="password" class="form-control"
+                                placeholder="Enter your password" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input id="confirm_password" name="confirm_password" type="password" class="form-control"
+                                placeholder="Confirm your password" />
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <a asp-action="Login" class="text-decoration-none">Already have an account? Login here.</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .form-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-control:hover {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+</style>
